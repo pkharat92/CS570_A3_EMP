@@ -9,6 +9,11 @@
 #include <pthread.h>
 #include <signal.h>
 
-#define DEFAULT_TIME 32
-#define DEFAULT_PRINT_INTERVAL 1
+#define DEFAULT_COUNT 32
+#define DEFAULT_PRINT 1
 #define DEFAULT_ALARM 17
+
+void *signal_handler(void *i)
+void *countdown_timer(void *i);
+void *wall_clock(void *i);
+void *alarm(void *i);

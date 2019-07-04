@@ -10,37 +10,114 @@ a3.c
 
 using namespace std;
 
+pthread_t SIGNAL_CATCHER, COUNTDOWN_TIMER, PRINT_INTERVAL, ALARM;
+
+time_t rawtime;
+time_t endingtime;
+struct tm *timeinfo;
+struct tm *endinginfo;
+
+long count;
+int print;
+long alarm;
+
+bool sig = true;
+
 /*
-  This is the main function of the program. The program is in charge of
-  creating three threads. Each thread will call a different function, countdown_Timer, wall_Clock()
-  and alarm() respectively. If no argument entered by the user the
-  program will use (75 1 45).
+  This is the main function of the program. The program creates four
+  threads. One is the signal handler, and the others are worker threads. 
+  Each worker thread will call a different function, countdown_timer(), 
+  wall_clock(), and alarm() respectively. If no argument is entered by 
+  the user, the program will use the default values: 32, 1, 17.
 */
 
 int main(int argc, char* argv[]){
-
-        // Use default (32 1 17) if no argument
+		time(&rawtime);
+		timeinfo = localtime(&rawtime);
+		
+        // Use default (32, 1, 17) if no argument
         if(argc == 1){
-
-        }
-
+			count = DEFAULT_COUNT;
+			print = DEFAULT_PRINT;
+			alarm = DEFAULT_ALARM;
+        } // End if
         else if (argc > 1){
-
-        }
-
+			switch(argc) {
+				case 2: 
+					count = atoi(argv[1]);
+					print = DEFAULT_PRINT;
+					alarm = DEFAULT_ALARM;
+					break;
+				case 3: 
+					count = atoi(argv[1]);
+					print = atoi(argv[2]);
+					alarm = DEFAULT_ALARM;
+					break;
+				case 4:
+					count = atoi(argv[1]);
+					print = atoi(argv[2]);
+					alarm = atoi(argv[3]);
+					break;
+				default:
+					cout << "\nInvalid number of parameters. Goodbye!" << endl;
+					return 0;
+			} // End switch
+			
+			// Error check - first and third parameters
+			if(count == 0 || alarm == 0) {
+				cout << "\nInvalid number. Goodbye!"; << endl;
+				return 0;
+			} // End if
+			
+			// Error check - second parameter
+			if(print != 1 || print != 60) {
+				cout << "\nInvalid number. Goodbye!"; << endl;
+				return 0;
+			} // End if
+        } // End else if
+		
+		endingtime = mktime(timeinfo);
+		endingtime += count;
+		endinginfo = localtime(&endingtime);
+		
+		pthread_create(&SIGNAL_CATCHER, NULL, &signal_handler, NULL);
+		pthread_create(&COUNTDOWN_TIMER, NULL, &countdown_timer, NULL);
+		pthread_create(&PRINT_INTERVAL, NULL, &wall_clock, NULL);
+		pthread_create(&ALARM, NULL, &alarm, NULL);
+		
+		pthread_join(SIGNAL_CATCHER, NULL);
+		pthread_join(COUNTDOWN_TIMER, NULL);
+		pthread_join(PRINT_INTERVAL, NULL);
+		pthread_join(ALARM, NULL);
+		
+		cout << "\nProcess finished. Goodbye!; << endl;
+		
         return 0;
 } // End main
 
 /*
-  This function will busy wait until the desired time is reached.
-*/
-
-void *countdown_Timer(void *i){
-
-} // End *countdown_Timer()
+ * Handles all signals
+ */
+void *signal_handler(void *i) {
+} // End *signal_handler()
 
 /*
-void *wall_Clock(void *i){
-} // End *wall_Clock()
+ * Busy waits until the desired time is reached, then sends a 
+ * signal to end the program
+ */
+void *countdown_timer(void *i){
+
+} // End *countdown_timer()
+
+/*
+ * Prints the time of day in hour, minute, and second format
+ */
+void *wall_clock(void *i){
+} // End *wall_clock()
+
+/*
+ * Prints an alarm message to the terminal when the user-specified
+ * or default value is reached
+ */ 
 void *alarm(void *i){
 } // End *alarm()
