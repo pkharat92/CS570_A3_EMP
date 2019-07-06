@@ -1,10 +1,17 @@
-#include <iostream>
+/*
+  Authors: Alex Gonzalez, Pierre Kharat
+  User: cssc0816, cs0844
+  Class: CS 570, Summer 2019
+  Assignment 3, EMP
+  a3.h
+*/
+
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 #include <time.h>
 #include <unistd.h>
-#include <cstdlib>
 #include <stdio.h>
 #include <pthread.h>
 #include <signal.h>
@@ -16,4 +23,4 @@
 void *signal_handler(void *i)
 void *countdown_timer(void *i);
 void *wall_clock(void *i);
-void *alarm(void *i);
+void *alarm_funct(void *i);
