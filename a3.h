@@ -20,7 +20,7 @@
 #define DEFAULT_PRINT 1
 #define DEFAULT_ALARM 17
 
-void *signal_handler(void *i)
+void *signal_handler(void *i);
 void *countdown_timer(void *i);
 void *wall_clock(void *i);
 void *alarm_funct(void *i);
