@@ -19,8 +19,8 @@ long count;
 int print;
 long alarm_time;
 
-bool sig = true;
 bool alarm_sig = true;
+bool close_threads_sig = true;
 
 /*
   This is the main function of the program. The program creates four
@@ -31,6 +31,9 @@ bool alarm_sig = true;
 */
 
 int main(int argc, char* argv[]){
+		// Register signal SIGINT and signal handler
+		signal(SIGINT, *signal_handler);
+		
 		time(&rawtime);
 		timeinfo = localtime(&rawtime);
 		
@@ -84,7 +87,7 @@ int main(int argc, char* argv[]){
 		endingtime = mktime(timeinfo) + count;
 		endinginfo = localtime(&endingtime);
 		
-		pthread_create(&SIGNAL_CATCHER, NULL, &signal_handler, NULL);
+		pthread_create(&SIGNAL_CATCHER, NULL, &signal_handler, (void *) &i);
 		pthread_create(&COUNTDOWN_TIMER, NULL, &countdown_timer, NULL);
 		pthread_create(&PRINT_INTERVAL, NULL, &wall_clock, NULL);
 		pthread_create(&ALARM, NULL, &alarm_funct, NULL);
@@ -103,6 +106,15 @@ int main(int argc, char* argv[]){
  * Handles all signals
  */
 void *signal_handler(void *i) {
+	int *signum = (int*) i;
+	
+	// Sends signal to output alarm message
+	if(signum == 2) alarm_sig = false;
+	
+	// Sends signal to close all threads
+	if(signum == 3) close_threads_sig = false;
+	
+	pthread_exit(NULL);
 } // End *signal_handler()
 
 /*
@@ -116,12 +128,14 @@ void *countdown_timer(void *i){
 	
 	// Sleep until time to output alarm message
 	sleep(alarm_time);
-	alarm_sig = false;
+	raise(SIGINT);
 	
 	// Sleep until countdown is reached
 	sleep(count - alarm_time);
-	sig = false;
+	raise(SIGINT);
 	
+	// Busy waits until it receives the signal to close the thread
+	while(close_threads_sig);
 	pthread_exit(NULL);
 } // End *countdown_timer()
 
@@ -139,6 +153,8 @@ void *wall_clock(void *i){
 		sleep(print); // will print either every second or minute
 	} // End while
 	
+	// Busy waits until it receives the signal to close the thread
+	while(close_threads_sig);
 	pthread_exit(NULL);
 } // End *wall_clock()
 
@@ -150,4 +166,5 @@ void *alarm_funct(void *i){
 	// Busy waits until alarm signal is sent
 	while(alarm_sig);
 	printf("\n====Alarm====\n");
+	pthread_exit(NULL);
 } // End *alarm_funct()
