@@ -1,14 +1,12 @@
 /*
-Authors: Alex Gonzalez, Pierre Kharat
-User: cssc0816, cs0844
-Class: CS 570, Summer 2019
-Assignment 3, EMP
-a3.c
+  Authors: Alex Gonzalez, Pierre Kharat
+  User: cssc0816, cs0844
+  Class: CS 570, Summer 2019
+  Assignment 3, EMP
+  a3.c
 */
 
 #include "a3.h"
-
-using namespace std;
 
 pthread_t SIGNAL_CATCHER, COUNTDOWN_TIMER, PRINT_INTERVAL, ALARM;
 
@@ -60,25 +58,25 @@ int main(int argc, char* argv[]){
 					alarm = atoi(argv[3]);
 					break;
 				default:
-					cout << "\nInvalid number of parameters. Goodbye!" << endl;
+					printf("\nInvalid number of parameters. Goodbye!\n");
 					return 0;
 			} // End switch
 			
 			// Error check - first parameter
 			if(count == 0) {
-				cout << "\nInvalid first parameter. Goodbye!"; << endl;
+				printf("\nInvalid first parameter. Goodbye!\n");
 				return 0;
 			} // End if
 			
 			// Error check - second parameter
 			if(print != 1 || print != 60) {
-				cout << "\nInvalid second parameter. Goodbye!"; << endl;
+				printf("\nInvalid second parameter. Goodbye!\n");
 				return 0;
 			} // End if
 			
 			// Error check - third parameter
 			if(alarm == 0 || alarm > count) {
-				cout << "\nInvalid third parameter. Goodbye!"; << endl;
+				printf("\nInvalid third parameter. Goodbye!\n");
 				return 0;
 			} // End if
         } // End else if
@@ -96,7 +94,7 @@ int main(int argc, char* argv[]){
 		pthread_join(PRINT_INTERVAL, NULL);
 		pthread_join(ALARM, NULL);
 		
-		cout << "\nProcess finished. Goodbye!; << endl;
+		printf("\nProcess finished. Goodbye!\n");
 		
         return 0;
 } // End main
@@ -148,8 +146,8 @@ void *wall_clock(void *i){
  * Prints an alarm message to the terminal when the user-specified
  * or default value is reached
  */ 
-void *alarm(void *i){
+void *alarm_funct(void *i){
 	// Busy waits until alarm signal is sent
 	while(alarm_sig);
-	cout << "\n====Alarm====\n";
+	printf("\n====Alarm====\n");
 } // End *alarm()
