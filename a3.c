@@ -17,7 +17,7 @@ struct tm *endinginfo;
 
 long count;
 int print;
-long alarm;
+long alarm_time;
 
 bool sig = true;
 bool alarm_sig = true;
@@ -38,24 +38,24 @@ int main(int argc, char* argv[]){
         if(argc == 1){
 			count = DEFAULT_COUNT;
 			print = DEFAULT_PRINT;
-			alarm = DEFAULT_ALARM;
+			alarm_time = DEFAULT_ALARM;
         } // End if
         else if (argc > 1){
 			switch(argc) {
 				case 2: 
 					count = atoi(argv[1]);
 					print = DEFAULT_PRINT;
-					alarm = DEFAULT_ALARM;
+					alarm_time = DEFAULT_ALARM;
 					break;
 				case 3: 
 					count = atoi(argv[1]);
 					print = atoi(argv[2]);
-					alarm = DEFAULT_ALARM;
+					alarm_time = DEFAULT_ALARM;
 					break;
 				case 4:
 					count = atoi(argv[1]);
 					print = atoi(argv[2]);
-					alarm = atoi(argv[3]);
+					alarm_time = atoi(argv[3]);
 					break;
 				default:
 					printf("\nInvalid number of parameters. Goodbye!\n");
@@ -75,7 +75,7 @@ int main(int argc, char* argv[]){
 			} // End if
 			
 			// Error check - third parameter
-			if(alarm == 0 || alarm > count) {
+			if(alarm_time == 0 || alarm_time > count) {
 				printf("\nInvalid third parameter. Goodbye!\n");
 				return 0;
 			} // End if
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]){
 		pthread_create(&SIGNAL_CATCHER, NULL, &signal_handler, NULL);
 		pthread_create(&COUNTDOWN_TIMER, NULL, &countdown_timer, NULL);
 		pthread_create(&PRINT_INTERVAL, NULL, &wall_clock, NULL);
-		pthread_create(&ALARM, NULL, &alarm, NULL);
+		pthread_create(&ALARM, NULL, &alarm_funct, NULL);
 		
 		pthread_join(SIGNAL_CATCHER, NULL);
 		pthread_join(COUNTDOWN_TIMER, NULL);
@@ -115,14 +115,14 @@ void *countdown_timer(void *i){
 	timeinfo = localtime(&rawtime);
 	
 	// Sleep until time to output alarm message
-	sleep(alarm);
+	sleep(alarm_time);
 	alarm_sig = false;
 	
 	// Sleep until countdown is reached
-	sleep(count - alarm);
+	sleep(count - alarm_time);
 	sig = false;
 	
-	ptheread_exit(NULL);
+	pthread_exit(NULL);
 } // End *countdown_timer()
 
 /*
@@ -150,4 +150,4 @@ void *alarm_funct(void *i){
 	// Busy waits until alarm signal is sent
 	while(alarm_sig);
 	printf("\n====Alarm====\n");
-} // End *alarm()
+} // End *alarm_funct()
