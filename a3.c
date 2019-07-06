@@ -22,6 +22,7 @@ int print;
 long alarm;
 
 bool sig = true;
+bool alarm_sig = true;
 
 /*
   This is the main function of the program. The program creates four
@@ -63,21 +64,26 @@ int main(int argc, char* argv[]){
 					return 0;
 			} // End switch
 			
-			// Error check - first and third parameters
-			if(count == 0 || alarm == 0) {
-				cout << "\nInvalid number. Goodbye!"; << endl;
+			// Error check - first parameter
+			if(count == 0) {
+				cout << "\nInvalid first parameter. Goodbye!"; << endl;
 				return 0;
 			} // End if
 			
 			// Error check - second parameter
 			if(print != 1 || print != 60) {
-				cout << "\nInvalid number. Goodbye!"; << endl;
+				cout << "\nInvalid second parameter. Goodbye!"; << endl;
+				return 0;
+			} // End if
+			
+			// Error check - third parameter
+			if(alarm == 0 || alarm > count) {
+				cout << "\nInvalid third parameter. Goodbye!"; << endl;
 				return 0;
 			} // End if
         } // End else if
 		
-		endingtime = mktime(timeinfo);
-		endingtime += count;
+		endingtime = mktime(timeinfo) + count;
 		endinginfo = localtime(&endingtime);
 		
 		pthread_create(&SIGNAL_CATCHER, NULL, &signal_handler, NULL);
@@ -106,13 +112,36 @@ void *signal_handler(void *i) {
  * signal to end the program
  */
 void *countdown_timer(void *i){
-
+	
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	
+	// Sleep until time to output alarm message
+	sleep(alarm);
+	alarm_sig = false;
+	
+	// Sleep until countdown is reached
+	sleep(count - alarm);
+	sig = false;
+	
+	ptheread_exit(NULL);
 } // End *countdown_timer()
 
 /*
  * Prints the time of day in hour, minute, and second format
  */
 void *wall_clock(void *i){
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	
+	while(sig) {
+		time(&rawtime);
+		timeinfo = localtime(&rawtime);
+		printf("%s", asctime(timeinfo));
+		sleep(print); // will print either every second or minute
+	} // End while
+	
+	pthread_exit(NULL);
 } // End *wall_clock()
 
 /*
@@ -120,4 +149,7 @@ void *wall_clock(void *i){
  * or default value is reached
  */ 
 void *alarm(void *i){
+	// Busy waits until alarm signal is sent
+	while(alarm_sig);
+	cout << "\n====Alarm====\n";
 } // End *alarm()
