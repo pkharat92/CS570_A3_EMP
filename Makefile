@@ -10,8 +10,8 @@
 EXEC = emp
 FILES = a3.c
 CC = gcc
-LFLAGS = -g
-CFLAGS = -g -c -I.
+LFLAGS = -g -pthread
+CFLAGS = -g -c -pthread -I.
 OBJECTS = $(FILES:.c=.o)
 $(EXEC):$(OBJECTS)
         $(CC) $(LFLAGS) -o $(EXEC) $(OBJECTS)
