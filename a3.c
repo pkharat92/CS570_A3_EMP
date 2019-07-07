@@ -16,7 +16,7 @@ struct tm *timeinfo;
 struct tm *endinginfo;
 
 long count;
-long print;
+int print_time;
 long alarm_time;
 
 int signum = 1;
@@ -31,10 +31,10 @@ bool stop_sig = false;
   the user, the program will use the default values: 32, 1, 17.
 */
 
-int main(int argc, char* argv[]){	
+int main(int argc, char* argv[]){
 	// Register signal SIGINT and signal handler
-	signal(SIGINT, signal_handler);
-	
+	signal(SIGINT, *signal_handler);
+		
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 		
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]){
     else if (argc > 1){
 		switch(argc) {
 			case 2: 
-				count = strtol(argv[1], NULL, 10);
+				count = strtol(argv[1], NULL,10 );
 				print_time = DEFAULT_PRINT;
 				alarm_time = DEFAULT_ALARM;
 				break;
@@ -71,12 +71,12 @@ int main(int argc, char* argv[]){
 			printf("\nInvalid first parameter. Goodbye!\n");
 			return 0;
 		} // End if
-			
+		
 		// Error check - second parameter
-		if(print_time != 1 && print_time != 60) {
+		if(print_time != 1 && print_time != 60) {	
 			printf("\nInvalid second parameter. Goodbye!\n");
 			return 0;
-		} // End if
+		}
 			
 		// Error check - third parameter
 		if(alarm_time == 0 || alarm_time > count) {
@@ -122,19 +122,18 @@ void signal_handler() {
  * signal to end the program
  */
 void *countdown_timer(void *i){
-	int sleep_time = count - alarm;
 	
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 	
 	// Sleep until time to output alarm message
-	alarm(alarm_time);
-	signum++;
-	
+	sleep(alarm_time);
+	signum++;	
+
 	// Sleep until countdown is reached
 	sleep(count - alarm_time);
 	signum++;
-
+	
 	pthread_exit(NULL);
 } // End *countdown_timer()
 
