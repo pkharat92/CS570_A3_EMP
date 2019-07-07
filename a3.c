@@ -16,11 +16,12 @@ struct tm *timeinfo;
 struct tm *endinginfo;
 
 long count;
-int print;
+long print;
 long alarm_time;
 
-bool alarm_sig = true;
-bool close_threads_sig = true;
+int signum = 1;
+bool alarm_sig = false;
+bool stop_sig = false;
 
 /*
   This is the main function of the program. The program creates four
@@ -30,90 +31,89 @@ bool close_threads_sig = true;
   the user, the program will use the default values: 32, 1, 17.
 */
 
-int main(int argc, char* argv[]){
-		// Register signal SIGINT and signal handler
-		signal(SIGINT, *signal_handler);
+int main(int argc, char* argv[]){	
+	// Register signal SIGINT and signal handler
+	signal(SIGINT, signal_handler);
+	
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
 		
-		time(&rawtime);
-		timeinfo = localtime(&rawtime);
-		
-        // Use default (32, 1, 17) if no argument
-        if(argc == 1){
-			count = DEFAULT_COUNT;
-			print = DEFAULT_PRINT;
-			alarm_time = DEFAULT_ALARM;
-        } // End if
-        else if (argc > 1){
-			switch(argc) {
-				case 2: 
-					count = atoi(argv[1]);
-					print = DEFAULT_PRINT;
-					alarm_time = DEFAULT_ALARM;
-					break;
-				case 3: 
-					count = atoi(argv[1]);
-					print = atoi(argv[2]);
-					alarm_time = DEFAULT_ALARM;
-					break;
-				case 4:
-					count = atoi(argv[1]);
-					print = atoi(argv[2]);
-					alarm_time = atoi(argv[3]);
-					break;
-				default:
-					printf("\nInvalid number of parameters. Goodbye!\n");
-					return 0;
-			} // End switch
-			
-			// Error check - first parameter
-			if(count == 0) {
-				printf("\nInvalid first parameter. Goodbye!\n");
+    // Use default (32, 1, 17) if no argument
+     if(argc == 1){
+		count = DEFAULT_COUNT;
+		print_time = DEFAULT_PRINT;
+		alarm_time = DEFAULT_ALARM;
+    } // End if
+    else if (argc > 1){
+		switch(argc) {
+			case 2: 
+				count = strtol(argv[1], NULL, 10);
+				print_time = DEFAULT_PRINT;
+				alarm_time = DEFAULT_ALARM;
+				break;
+			case 3: 
+				count = strtol(argv[1], NULL, 10);
+				print_time = strtol(argv[2], NULL, 10);
+				alarm_time = DEFAULT_ALARM;
+				break;
+			case 4:
+				count = strtol(argv[1], NULL, 10);
+				print_time = strtol(argv[2], NULL, 10);
+				alarm_time = strtol(argv[3], NULL, 10);
+				break;
+			default:
+				printf("\nInvalid number of parameters. Goodbye!\n");
 				return 0;
-			} // End if
+		} // End switch
 			
-			// Error check - second parameter
-			if(print != 1 || print != 60) {
-				printf("\nInvalid second parameter. Goodbye!\n");
-				return 0;
-			} // End if
+		// Error check - first parameter
+		if(count == 0) {
+			printf("\nInvalid first parameter. Goodbye!\n");
+			return 0;
+		} // End if
 			
-			// Error check - third parameter
-			if(alarm_time == 0 || alarm_time > count) {
-				printf("\nInvalid third parameter. Goodbye!\n");
-				return 0;
-			} // End if
-        } // End else if
+		// Error check - second parameter
+		if(print_time != 1 && print_time != 60) {
+			printf("\nInvalid second parameter. Goodbye!\n");
+			return 0;
+		} // End if
+			
+		// Error check - third parameter
+		if(alarm_time == 0 || alarm_time > count) {
+			printf("\nInvalid third parameter. Goodbye!\n");
+			return 0;
+		} // End if
+    } // End else if
 		
-		endingtime = mktime(timeinfo) + count;
-		endinginfo = localtime(&endingtime);
+	endingtime = mktime(timeinfo) + count;
+	endinginfo = localtime(&endingtime);
 		
-		pthread_create(&SIGNAL_CATCHER, NULL, &signal_handler, (void *) &i);
-		pthread_create(&COUNTDOWN_TIMER, NULL, &countdown_timer, NULL);
-		pthread_create(&PRINT_INTERVAL, NULL, &wall_clock, NULL);
-		pthread_create(&ALARM, NULL, &alarm_funct, NULL);
+	pthread_create(&SIGNAL_CATCHER, NULL, (void*) &signal_handler, NULL);
+	pthread_create(&COUNTDOWN_TIMER, NULL, &countdown_timer, NULL);
+	pthread_create(&PRINT_INTERVAL, NULL, &wall_clock, NULL);
+	pthread_create(&ALARM, NULL, &alarm_funct, NULL);
 		
-		pthread_join(SIGNAL_CATCHER, NULL);
-		pthread_join(COUNTDOWN_TIMER, NULL);
-		pthread_join(PRINT_INTERVAL, NULL);
-		pthread_join(ALARM, NULL);
+	pthread_join(SIGNAL_CATCHER, NULL);
+	pthread_join(COUNTDOWN_TIMER, NULL);
+	pthread_join(PRINT_INTERVAL, NULL);
+	pthread_join(ALARM, NULL);
 		
-		printf("\nProcess finished. Goodbye!\n");
+	printf("\nProcess finished. Goodbye!\n");
 		
-        return 0;
+    return 0;
 } // End main
 
 /*
  * Handles all signals
  */
-void *signal_handler(void *i) {
-	int *signum = (int*) i;
-	
+void signal_handler() {
 	// Sends signal to output alarm message
-	if(signum == 2) alarm_sig = false;
+	while(signum != 2);
+	alarm_sig = true;
 	
 	// Sends signal to close all threads
-	if(signum == 3) close_threads_sig = false;
-	
+	while(signum != 3);
+	stop_sig = true;
 	pthread_exit(NULL);
 } // End *signal_handler()
 
@@ -122,20 +122,19 @@ void *signal_handler(void *i) {
  * signal to end the program
  */
 void *countdown_timer(void *i){
+	int sleep_time = count - alarm;
 	
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 	
 	// Sleep until time to output alarm message
-	sleep(alarm_time);
-	raise(SIGINT);
+	alarm(alarm_time);
+	signum++;
 	
 	// Sleep until countdown is reached
 	sleep(count - alarm_time);
-	raise(SIGINT);
-	
-	// Busy waits until it receives the signal to close the thread
-	while(close_threads_sig);
+	signum++;
+
 	pthread_exit(NULL);
 } // End *countdown_timer()
 
@@ -146,15 +145,13 @@ void *wall_clock(void *i){
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 	
-	while(sig) {
+	while(!stop_sig) {
 		time(&rawtime);
 		timeinfo = localtime(&rawtime);
 		printf("%s", asctime(timeinfo));
-		sleep(print); // will print either every second or minute
+		sleep(print_time); // will print either every second or minute
 	} // End while
 	
-	// Busy waits until it receives the signal to close the thread
-	while(close_threads_sig);
 	pthread_exit(NULL);
 } // End *wall_clock()
 
@@ -164,7 +161,7 @@ void *wall_clock(void *i){
  */ 
 void *alarm_funct(void *i){
 	// Busy waits until alarm signal is sent
-	while(alarm_sig);
-	printf("\n====Alarm====\n");
+	while(!alarm_sig);
+	printf("==========Alarm==========\n");
 	pthread_exit(NULL);
 } // End *alarm_funct()
